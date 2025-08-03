@@ -1,0 +1,1 @@
+pyinstaller --windowed --noconfirm --onefile --console --icon "D:\Python\voice assistent\micro.ico" --name "Glados" --add-data "D:\Python\voice assistent\myvenv;myvenv/"  "D:\Python\voice assistent\main.py"
