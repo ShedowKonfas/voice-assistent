@@ -11,9 +11,10 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import os
 from typing import Any
 
-from paths import app_file
+from paths import app_file, asset
 
 log = logging.getLogger(__name__)
 
@@ -107,23 +108,38 @@ def _read_json(path: str) -> dict[str, Any]:
 
 
 def load_config() -> dict[str, Any]:
-    config = _deep_merge(DEFAULTS, _read_json(CONFIG_PATH))
-    local = _read_json(LOCAL_CONFIG_PATH)
-    if local:
-        config = _deep_merge(config, local)
+    config = copy.deepcopy(DEFAULTS)
+
+    # 1. конфиг из сборки (PyInstaller кладёт его в _MEIPASS),
+    # 2. конфиг рядом с exe/скриптом,
+    # 3. личный конфиг с ключами.
+    seen: set[str] = set()
+    for path in (asset("config.json"), CONFIG_PATH, LOCAL_CONFIG_PATH):
+        normalized = os.path.normcase(os.path.abspath(path))
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        data = _read_json(path)
+        if data:
+            config = _deep_merge(config, data)
     return config
 
 
 def save_default_config(path: str = CONFIG_PATH) -> None:
-    """Записывает config.json с настройками по умолчанию (если файла нет)."""
-    import os
-
+    """Создаёт config.json рядом с exe/скриптом, если его ещё нет."""
     if os.path.exists(path):
         return
     try:
+        bundled = asset("config.json")
+        if os.path.exists(bundled):
+            with open(bundled, "r", encoding="utf-8") as src:
+                data = json.load(src)
+        else:
+            data = DEFAULTS
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump(DEFAULTS, fh, ensure_ascii=False, indent=2)
-    except OSError as exc:
+            json.dump(data, fh, ensure_ascii=False, indent=2)
+        log.info("Создан файл настроек %s", path)
+    except (OSError, json.JSONDecodeError) as exc:
         log.error("Не удалось создать %s: %s", path, exc)
 
 

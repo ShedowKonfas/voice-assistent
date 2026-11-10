@@ -15,6 +15,9 @@ start.cmd
 - `start_debug.cmd` — запуск с консолью и подробным логом;
 - `build.bat` — собрать `Glados.exe` в `dist\`.
 
+Для сборки: положите `config.local.json` рядом с `dist\Glados.exe` (или отредактируйте
+`dist\config.json`), иначе ключи API будут пустыми.
+
 Проверка без микрофона:
 
 ```bat

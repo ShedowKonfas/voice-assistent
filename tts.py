@@ -285,7 +285,7 @@ class Speaker:
             pass
 
     def _play(self, path: str) -> None:
-        if not os.path.exists(path) or os.path.getsize(path) < 1024:
+        if not os.path.exists(path) or os.path.getsize(path) < 256:
             raise TTSError("получен пустой аудиофайл (нет подходящего голоса?)")
 
         self._ensure_mixer()

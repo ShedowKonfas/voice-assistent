@@ -390,7 +390,7 @@ class Dispatcher:
                     os.startfile(path)  # type: ignore[attr-defined]
                 except OSError:
                     log.exception("Не удалось открыть %s", path)
-        return None
+        return "Включаю Рика и Морти."
 
     def _theory(self, _text: str) -> Reply:
         name = get(self.config, "files.theory", "teor.pdf")
