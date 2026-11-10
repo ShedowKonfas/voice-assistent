@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['D:\\Python\\voice assistent\\main.py'],
+    ['D:\\Python\\Glados (voice assistent)\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('D:\\Python\\voice assistent\\myvenv', 'myvenv/')],
+    datas=[('D:\\Python\\Glados (voice assistent)\\venv', 'venv/')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -29,11 +29,11 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['D:\\Python\\voice assistent\\micro.ico'],
+    icon=['D:\\Python\\Glados (voice assistent)\\micro.ico'],
 )

@@ -1,0 +1,24 @@
+# Виртуальное окружение и артефакты сборки
+venv/
+build/
+dist/
+output/
+
+# Кэш Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Логи и временные файлы
+logs/
+*.log
+*.tmp
+*.wav
+*.mp3
+
+# Системный мусор
+Thumbs.db
+desktop.ini
+.DS_Store
+.idea/
+.vscode/

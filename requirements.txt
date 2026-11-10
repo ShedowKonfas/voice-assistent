@@ -1,0 +1,11 @@
+SpeechRecognition
+pyttsx3
+pyautogui
+requests
+pystray
+Pillow
+pyaudio 
+pyinstaller
+auto-py-to-exe
+keyboard
+opencv-python
