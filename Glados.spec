@@ -1,16 +1,34 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+"""Сборка onefile-exe без всего venv: только нужные ресурсы."""
 
 a = Analysis(
-    ['D:\\Python\\Glados (voice assistent)\\main.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('D:\\Python\\Glados (voice assistent)\\venv', 'venv/')],
-    hiddenimports=[],
+    datas=[
+        ('micro.png', '.'),
+        ('micro.ico', '.'),
+        ('mute.png', '.'),
+        ('unmute.png', '.'),
+        ('mix.png', '.'),
+        ('restart.png', '.'),
+        ('teor.pdf', '.'),
+        ('config.json', '.'),
+    ],
+    hiddenimports=[
+        'pystray._win32',
+        'pyttsx3.drivers',
+        'pyttsx3.drivers.sapi5',
+        'comtypes.gen',
+        'pygame',
+        'edge_tts',
+        'gtts',
+        'speech_recognition',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['auto_py_to_exe', 'tkinter', 'unittest'],
     noarchive=False,
     optimize=0,
 )
@@ -35,5 +53,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['D:\\Python\\Glados (voice assistent)\\micro.ico'],
+    icon=['micro.ico'],
 )

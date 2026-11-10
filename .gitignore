@@ -9,6 +9,9 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Личные данные (API-ключи)
+config.local.json
+
 # Логи и временные файлы
 logs/
 *.log

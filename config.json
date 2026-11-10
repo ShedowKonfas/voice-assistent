@@ -1,0 +1,76 @@
+{
+  "assistant": {
+    "name": "Гладос",
+    "wake_words": [
+      "гладос",
+      "гладас",
+      "гладус",
+      "кладос",
+      "глатос",
+      "глаша",
+      "глашу",
+      "glados",
+      "gladas"
+    ],
+    "exit_words": [
+      "хватит",
+      "отбой",
+      "замолчи",
+      "отстань",
+      "пока",
+      "до свидания"
+    ],
+    "ack": "Да, я вас слушаю.",
+    "startup_message": "Система запущена.",
+    "followup_seconds": 8,
+    "wake_timeout": 2.0,
+    "command_timeout": 6.0,
+    "phrase_limit": 8.0,
+    "mic_name": "",
+    "mic_index": null,
+    "energy_threshold": null
+  },
+  "voice": {
+    "engine": "auto",
+    "edge_voice": "ru-RU-SvetlanaNeural",
+    "edge_rate": "-4%",
+    "edge_pitch": "-8Hz",
+    "gtts_tld": "ru",
+    "pyttsx3_voice": "",
+    "pyttsx3_rate": 190,
+    "volume": 1.0
+  },
+  "api": {
+    "openweather_key": "",
+    "currency_key": ""
+  },
+  "city": "Анапа",
+  "shutdown_enabled": true,
+  "apps": {
+    "steam": "D:\\Program Files\\Steam\\steam.exe",
+    "discord": "",
+    "telegram": "",
+    "vlc": "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe"
+  },
+  "hotkeys": {
+    "browser": ["win", "1"],
+    "terminal": ["win", "6"],
+    "zapret": ["ctrl", "f5"],
+    "bot": ["ctrl", "home"]
+  },
+  "links": {
+    "youtube": "https://www.youtube.com/",
+    "avito": "https://www.avito.ru/",
+    "music": "https://vk.com/music",
+    "mail": "https://mail.google.com/",
+    "yandex": "https://www.yandex.ru/",
+    "twitch": "https://www.twitch.tv/",
+    "ozon": "https://www.ozon.ru/",
+    "wildberries": "https://www.wildberries.ru/",
+    "rick_and_morty": "https://rickandmorty.mult-fan.tv/"
+  },
+  "files": {
+    "theory": "teor.pdf",
+    "rick_and_morty_shortcut": "RaM.lnk"
+  }
+}

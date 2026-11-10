@@ -1,11 +1,17 @@
-SpeechRecognition
-pyttsx3
-pyautogui
-requests
-pystray
-Pillow
-pyaudio 
-pyinstaller
-auto-py-to-exe
-keyboard
-opencv-python
+# --- запуск из Python ---
+SpeechRecognition>=3.16
+PyAudio>=0.2.14
+audioop-lts; python_version >= "3.13"
+pyttsx3>=2.99
+comtypes>=1.4
+PyAutoGUI>=0.9.54
+opencv-python>=4.10
+Pillow>=10.0
+pystray>=0.19
+requests>=2.31
+edge-tts>=7.0
+gTTS>=2.5
+pygame>=2.6
+
+# --- сборка exe (для запуска не требуется) ---
+pyinstaller>=6.0
