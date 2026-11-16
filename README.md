@@ -45,6 +45,67 @@ venv\Scripts\python -m unittest discover -s tests -v
 | `voice.engine` | `auto` (edge → gTTS → pyttsx3), `edge`, `gtts` или `pyttsx3` |
 | `voice.edge_voice` | голос edge-tts, по умолчанию `ru-RU-SvetlanaNeural` |
 | `api.openweather_key` | ключ OpenWeather (погода) |
+| `home_assistant.enabled` | включить управление Home Assistant |
+| `home_assistant.base_url` | адрес HA, например `http://192.168.3.209:8123` |
+| `home_assistant.token` | долгоживущий токен (только в `config.local.json`) |
+| `home_assistant.aliases` | свои названия устройств → `entity_id` |
+
+## Home Assistant
+
+Glados умеет управлять устройствами Home Assistant по REST API: телевизорами
+(`media_player`), роботом-пылесосом (`vacuum`), светом, розетками, климатом,
+шторами и замками.
+
+1. В Home Assistant создайте долгоживущий токен:
+   **Профиль → Безопасность → Долгоживущие токены доступа → Создать токен**.
+2. Пропишите адрес и токен в `config.local.json` (файл не попадает в git):
+
+```json
+{
+  "home_assistant": {
+    "enabled": true,
+    "base_url": "http://192.168.3.209:8123",
+    "token": "ВАШ_ТОКЕН",
+    "aliases": {
+      "телевизор": "media_player.living_room_tv",
+      "робот": "vacuum.robot"
+    }
+  }
+}
+```
+
+3. Проверьте связь и посмотрите список устройств:
+
+```bat
+venv\Scripts\python main.py --ha-status
+venv\Scripts\python main.py --ha-entities
+venv\Scripts\python main.py --ha-entities media_player,vacuum
+```
+
+4. Проверьте команду текстом:
+
+```bat
+venv\Scripts\python main.py --cmd "включи телевизор"
+```
+
+Примеры фраз:
+
+- «Гладос, включи телевизор», «выключи телевизор», «поставь телевизор на паузу»
+- «продолжи на телевизоре», «громче на телевизоре», «громкость телевизора 30»
+- «переключи телевизор на HDMI 1», «что с телевизором»
+- «запусти робот-пылесос», «верни робота на базу», «где робот»
+- «какой заряд у пылесоса», «включи турбо», «поставь пылесос на паузу»
+
+`aliases` нужны, если распознавание не совпадает с именем устройства. Список
+`entity_id` берётся из `--ha-entities`. Без alias поиск идёт по `friendly_name`
+и зоне (area), но alias надёжнее.
+
+Если сертификат самоподписанный, поставьте `"verify_ssl": false`.
+Таймаут — `"timeout": 8`, кэш списка устройств — `"refresh_seconds": 15`.
+
+Home Assistant проверяется раньше обычных команд, но срабатывает только когда
+во фразе явно упомянуто устройство. Поэтому «громче», «пауза» и «стоп» без
+названия устройства по-прежнему управляют компьютером.
 
 ## Как это работает
 
@@ -66,3 +127,6 @@ venv\Scripts\python -m unittest discover -s tests -v
 3. Проверьте микрофон: `--list-mics`, при необходимости впишите часть имени в
    `assistant.mic_name` (например `G435`).
 4. Если не слышит кодовое слово — добавьте свой вариант в `assistant.wake_words`.
+5. Home Assistant не отвечает: запустите `--ha-status`. Ошибка 401 — неверный токен,
+   «Нет связи» — проверьте `base_url`, порт 8123 и доступность сервера в локальной сети.
+   Если устройства не находятся по имени — добавьте `aliases` из `--ha-entities`.

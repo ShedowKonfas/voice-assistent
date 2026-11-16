@@ -190,6 +190,63 @@ def run_tts_test(config: dict, text: str) -> int:
     return 0
 
 
+# ----------------------------------------------------------- Home Assistant
+def _ha_client(config: dict):
+    from home_assistant import HomeAssistant
+
+    ha = HomeAssistant(config)
+    if not ha.enabled:
+        print("Home Assistant выключен: поставьте home_assistant.enabled = true в config.local.json.")
+        return None
+    if not ha.configured:
+        print("Home Assistant не настроен: задайте base_url и token в config.local.json.")
+        print("Токен: Home Assistant → Профиль → Безопасность → Долгоживущие токены доступа.")
+        return None
+    return ha
+
+
+def run_ha_status(config: dict) -> int:
+    from home_assistant import HomeAssistantError
+
+    ha = _ha_client(config)
+    if ha is None:
+        return 1
+    try:
+        print(ha.status())
+    except HomeAssistantError as exc:
+        print(f"Ошибка: {exc}")
+        return 2
+    return 0
+
+
+def run_ha_entities(config: dict, domains_arg: str) -> int:
+    from home_assistant import HomeAssistantError
+
+    ha = _ha_client(config)
+    if ha is None:
+        return 1
+
+    domains = {part.strip() for part in domains_arg.split(",") if part.strip()} or None
+    try:
+        entities = ha.entities(domains)
+    except HomeAssistantError as exc:
+        print(f"Ошибка: {exc}")
+        return 2
+
+    if not entities:
+        print("Устройства не найдены.")
+        return 0
+
+    for entity in entities:
+        area = f" [{entity.area}]" if entity.area else ""
+        print(f"{entity.entity_id} | {entity.name}{area} | {entity.state}")
+
+    print(f"\nВсего: {len(entities)}.")
+    print("Чтобы управлять по своему названию, добавьте alias в config.local.json:")
+    print('  "home_assistant": {"aliases": {"телевизор": "media_player.example"}}')
+    return 0
+
+
 # ---------------------------------------------------------------------- main
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="GLaDOS — голосовой ассистент")
@@ -202,6 +259,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--list-mics", action="store_true", help="список микрофонов")
     parser.add_argument("--list-voices", action="store_true", help="список голосов SAPI")
     parser.add_argument("--list-commands", action="store_true", help="список команд")
+    parser.add_argument("--ha-status", action="store_true",
+                        help="проверить связь с Home Assistant")
+    parser.add_argument("--ha-entities", nargs="?", const="", metavar="ДОМЕНЫ",
+                        help="список устройств Home Assistant (домены через запятую)")
     return parser
 
 
@@ -236,6 +297,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.list_commands:
         print(Dispatcher(config).help_text())
         return 0
+
+    if args.ha_status:
+        return run_ha_status(config)
+
+    if args.ha_entities is not None:
+        return run_ha_entities(config, args.ha_entities)
 
     if args.cmd:
         return run_cli_command(config, args.cmd)

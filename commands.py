@@ -20,6 +20,7 @@ import pyautogui
 import requests
 
 from config import get
+from home_assistant import NOT_HANDLED, HomeAssistant
 from paths import asset
 
 log = logging.getLogger(__name__)
@@ -68,6 +69,9 @@ class Dispatcher:
         self._shutdown_enabled = bool(config.get("shutdown_enabled", True))
         self._links = config.get("links", {})
         self._apps = config.get("apps", {})
+        self._home_assistant = HomeAssistant(config)
+        if self._home_assistant.enabled:
+            log.info("Home Assistant: %s", self._home_assistant.base_url or "адрес не задан")
         self.commands: list[Command] = self._build_commands()
 
     # ------------------------------------------------------------------ API
@@ -79,6 +83,15 @@ class Dispatcher:
         normalized = " ".join(str(text).lower().replace("ё", "е").split())
         if not normalized:
             return None
+
+        # Home Assistant проверяем первым, но обрабатываем только фразы,
+        # где явно упомянуто устройство. Иначе «громче», «пауза» и «стоп»
+        # остаются командами для компьютера.
+        ha_reply = self._home_assistant.handle(normalized)
+        if ha_reply is not NOT_HANDLED:
+            log.info("Команда: home_assistant <- %r", normalized)
+            return ha_reply if ha_reply is not None else ""
+
         for command in self.commands:
             if command.matches(normalized):
                 log.info("Команда: %s <- %r", command.name, normalized)
@@ -94,6 +107,11 @@ class Dispatcher:
     def help_text(self) -> str:
         lines = ["Доступные команды:"]
         lines.extend(f"  - {command.help}" for command in self.commands)
+        if self._home_assistant.enabled:
+            lines.append(
+                "  - «включи телевизор» / «запусти робот-пылесос» / "
+                "«что с телевизором» — Home Assistant"
+            )
         return "\n".join(lines)
 
     # ------------------------------------------------------------- команды
@@ -227,11 +245,14 @@ class Dispatcher:
         text = self.help_text()
         print(text)
         log.info("\n%s", text)
-        return (
+        speech = (
             "Я умею открывать сайты и приложения, управлять музыкой и громкостью, "
             "показывать погоду, конвертировать валюты, управлять микрофоном в Discord "
-            "и выключать компьютер. Полный список команд я записала в лог."
+            "и выключать компьютер."
         )
+        if self._home_assistant.enabled:
+            speech += " А ещё я управляю устройствами умного дома через Home Assistant."
+        return speech + " Полный список команд я записала в лог."
 
     def _weather(self, _text: str) -> Reply:
         key = get(self.config, "api.openweather_key", "")

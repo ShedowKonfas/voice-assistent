@@ -44,6 +44,17 @@
     "openweather_key": "",
     "currency_key": ""
   },
+  "home_assistant": {
+    "enabled": false,
+    "base_url": "http://homeassistant.local:8123",
+    "token": "",
+    "verify_ssl": true,
+    "timeout": 8,
+    "refresh_seconds": 15,
+    "state_wait_seconds": 0.8,
+    "use_areas": true,
+    "aliases": {}
+  },
   "city": "Анапа",
   "shutdown_enabled": true,
   "apps": {
