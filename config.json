@@ -42,7 +42,8 @@
   },
   "api": {
     "openweather_key": "",
-    "currency_key": ""
+    "currency_key": "",
+    "openroute_key": ""
   },
   "home_assistant": {
     "enabled": false,

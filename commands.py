@@ -124,6 +124,9 @@ class Dispatcher:
                     self._weather, "«погода» — погода в городе из конфига"),
             Command("currency", _rx(r"конверт", r"переведи", r"\bкурс\b", r"сколько стоит"),
                     self._currency, "«конвертируй 100 долларов в рубли»"),
+            Command("route", _rx(r"сколько ехать", r"как доехать", r"маршрут", r"путь до", r"путь от",
+                             r"сколько идти", r"как дойти", r"как добраться", r"пешком до", r"на велосипеде до", r"на машине до"),
+                    self._route, "«сколько ехать от Москвы до Питера» — маршрут и время"),
             Command("unmute", _rx(r"размут", r"включи микро"),
                     lambda _t: self._mic_screenshot("unmute.png", "Микрофон включён."),
                     "«размут» — включить микрофон в Discord"),
@@ -337,6 +340,134 @@ class Dispatcher:
         if re.fullmatch(r"[a-z]{3}", word):
             return word.upper()
         return None
+
+    # ------------------------------------------------------------ маршруты
+    def _route(self, text: str) -> Reply:
+        """Распознаёт «от А до Б» и запрашивает маршрут у OpenRouteService."""
+        # Паттерны: «сколько ехать от Москвы до Питера», «маршрут от А до Б», «путь до Питера»
+        patterns = [
+            r"от\s+(.+?)\s+до\s+(.+)",
+            r"до\s+(.+?)\s+от\s+(.+)",
+            r"путь\s+до\s+(.+)",
+            r"маршрут\s+до\s+(.+)",
+            r"как\s+доехать\s+до\s+(.+)",
+            r"сколько\s+ехать\s+до\s+(.+)",
+            # Пешком / велосипед
+            r"как\s+дойти\s+до\s+(.+)",
+            r"сколько\s+идти\s+до\s+(.+)",
+            r"сколько\s+идти\s+пешком\s+до\s+(.+)",
+            r"как\s+добраться\s+до\s+(.+)",
+        ]
+
+        origin = None
+        destination = None
+
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                groups = match.groups()
+                if len(groups) == 2:
+                    origin, destination = groups[0].strip(), groups[1].strip()
+                elif len(groups) == 1:
+                    # Только пункт назначения — старт из конфига (город пользователя)
+                    destination = groups[0].strip()
+                    origin = self.config.get("city", "").strip()
+                break
+
+        if not destination:
+            return "Скажите: «сколько ехать от Москвы до Питера» или «маршрут до Питера»."
+
+        if not origin:
+            return "Не знаю, откуда ехать. Укажите город в конфиге или скажите «от Москвы до Питера»."
+
+        # Очистка от лишних слов
+        origin = re.sub(r"\b(из|где|город)\b", "", origin, flags=re.IGNORECASE).strip()
+        destination = re.sub(r"\b(в|где|город)\b", "", destination, flags=re.IGNORECASE).strip()
+
+        # Определение профиля: пешком, велосипед, машина
+        profile = "driving-car"
+        if re.search(r"\b(пешком|ходьб|walking)\b", text):
+            profile = "foot-walking"
+        elif re.search(r"\b(велосипед|байк|велик|cycling)\b", text):
+            profile = "cycling-regular"
+        elif re.search(r"\b(машин|авто|driving|car)\b", text):
+            profile = "driving-car"
+
+        return self._get_route(origin, destination, profile)
+
+    def _get_route(self, origin: str, destination: str, profile: str = "driving-car") -> Reply:
+        """Запрашивает маршрут у OpenRouteService."""
+        api_key = get(self.config, "api.openroute_key", "")
+        base_url = "https://api.openrouteservice.org"
+
+        # Геокодинг: место -> координаты
+        def geocode(place: str) -> tuple[float, float] | None:
+            params = {"text": place, "size": 1}
+            if api_key:
+                params["api_key"] = api_key
+            try:
+                resp = requests.get(f"{base_url}/geocode/search", params=params, timeout=10)
+                data = resp.json()
+                features = data.get("features") or []
+                if not features:
+                    return None
+                coords = features[0]["geometry"]["coordinates"]  # [lon, lat]
+                return coords[1], coords[0]  # (lat, lon)
+            except Exception as exc:
+                log.warning("Геокодинг %s: %s", place, exc)
+                return None
+
+        origin_coords = geocode(origin)
+        dest_coords = geocode(destination)
+
+        if not origin_coords:
+            return f"Не нашла координаты для «{origin}». Попробуйте уточнить название."
+        if not dest_coords:
+            return f"Не нашла координаты для «{destination}». Попробуйте уточнить название."
+
+        # Маршрут
+        coords = f"{origin_coords[1]},{origin_coords[0]};{dest_coords[1]},{dest_coords[0]}"
+        params = {"coordinates": coords, "profile": profile, "format": "json", "instructions": "false"}
+        if api_key:
+            params["api_key"] = api_key
+
+        try:
+            resp = requests.get(f"{base_url}/v2/directions/{profile}", params=params, timeout=15)
+            data = resp.json()
+        except Exception as exc:
+            log.warning("Маршрут: %s", exc)
+            return "Не удалось получить маршрут. Проверьте интернет или API-ключ."
+
+        routes = data.get("routes") or []
+        if not routes:
+            return "Маршрут не найден."
+
+        route = routes[0]
+        summary = route.get("summary") or {}
+        distance_m = summary.get("distance", 0)
+        duration_s = summary.get("duration", 0)
+
+        distance_km = distance_m / 1000
+        hours = int(duration_s // 3600)
+        minutes = int((duration_s % 3600) // 60)
+
+        parts = []
+        if hours:
+            parts.append(f"{hours} час{'' if hours == 1 else 'а' if hours < 5 else 'ов'}")
+        if minutes or not hours:
+            parts.append(f"{minutes} минут{'' if minutes == 1 else 'ы' if minutes < 5 else ''}")
+
+        time_str = " ".join(parts) if parts else "менее минуты"
+        dist_str = f"{distance_km:.0f} км" if distance_km >= 1 else f"{distance_m:.0f} м"
+
+        profile_names = {
+            "driving-car": "на машине",
+            "foot-walking": "пешком",
+            "cycling-regular": "на велосипеде",
+        }
+        profile_ru = profile_names.get(profile, profile)
+
+        return f"Маршрут {profile_ru}: {time_str}, {dist_str}. Пробки не учитываются."
 
     def _mic_screenshot(self, filename: str, reply: str) -> Reply:
         if self._click_image(filename, confidence=0.9):

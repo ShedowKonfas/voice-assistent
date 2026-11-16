@@ -101,6 +101,18 @@ class DispatchTests(unittest.TestCase):
         self.assertEqual(Dispatcher._currency_code("usd"), "USD")
         self.assertIsNone(Dispatcher._currency_code("непонятно"))
 
+    def test_route_command(self) -> None:
+        self.assertEqual(self.match("сколько ехать от москвы до питера"), "route")
+        self.assertEqual(self.match("маршрут от москвы до санкт-петербурга"), "route")
+        self.assertEqual(self.match("путь до питера"), "route")
+        self.assertEqual(self.match("как доехать до питера"), "route")
+        self.assertEqual(self.match("сколько ехать до питера"), "route")
+        self.assertEqual(self.match("путь от москвы до питера"), "route")
+        # Профили
+        self.assertEqual(self.match("сколько идти пешком до метро"), "route")
+        self.assertEqual(self.match("маршрут на велосипеде до парка"), "route")
+        self.assertEqual(self.match("путь на машине до дачи"), "route")
+
 
 if __name__ == "__main__":
     unittest.main()
